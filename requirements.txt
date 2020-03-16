@@ -1,0 +1,6 @@
+google-api-python-client==1.16.0
+google-auth==1.11.3
+google-auth-oauthlib==0.4.1
+google-cloud-translate==2.0.1
+google-cloud-texttospeech==1.0.1
+moviepy==1.0.1
