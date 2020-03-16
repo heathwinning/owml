@@ -1,0 +1,15 @@
+#!/usr/bin/env python
+
+import vocabria
+from youtube_upload import PrivacyStatus
+import argparse
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Make a vocabria video')
+    parser.add_argument('text', type=str, help='some text to translate')
+    parser.add_argument('--privacy-status', type=PrivacyStatus, default=PrivacyStatus.PUBLIC,
+    choices=list(PrivacyStatus),
+                        help='youtube video privacy setting')
+
+    args = parser.parse_args()
+    vocabria.speak_in_many_languages(args.text, args.privacy_status)
