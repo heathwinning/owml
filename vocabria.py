@@ -8,7 +8,7 @@ from moviepy.video.tools.segmenting import findObjects
 import youtube_upload
 import argparse
 
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "/Users/heath/projects/vocabria/vocabria.json"
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.abspath("vocabria.json")
 
 def speak_in_many_languages(text, privacy_status=youtube_upload.PrivacyStatus.PUBLIC):
     text = text.title()
