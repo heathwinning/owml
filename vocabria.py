@@ -16,18 +16,27 @@ def speak_in_many_languages(text, privacy_status=youtube_upload.PrivacyStatus.PU
     directory = os.path.join('videos', text)
     if not os.path.exists(directory):
         os.mkdir(directory)
-    video_snippets = []
     languages = ['en'] + spoken_languages()
-    languages = languages[:2]
+    video_snippets = []
+    current_video_duration = 0
     for index, language in enumerate(languages):
         translation, audio_output_path = translate_and_speak(text, language, directory)
-        video_snippets.append(language_video_snippet(text, translation, language, audio_output_path, background_image_clip.size, index==len(languages)))
-    video_snippets.append(closing_message(background_image_clip.size))
-    full_video = concatenate_videoclips(video_snippets)
+        snippet, snippet_duration = language_video_snippet(text, translation, language, audio_output_path, current_video_duration)
+        video_snippets += snippet
+        current_video_duration += snippet_duration
+    translation_duration = current_video_duration
+    en_text_clip = TextClip(text, color='black', font='ArialUnicode', fontsize=200).set_position(('center', 0.2), relative=True)
+
+    message_duration = 4
+    message_clip = TextClip("""Leave a comment with words\nyou would like to hear translated!""", color='black', font="ArialUnicode", fontsize=150).set_position(('center', 0.35), relative=True)
+
     full_video = CompositeVideoClip([
         background_image_clip,
-        full_video
-    ], size=background_image_clip.size).subclip(0, full_video.duration)
+        en_text_clip.subclip(0, translation_duration - 0.7),
+        en_text_clip.subclip(0, 0.7).crossfadeout(0.7).set_start(translation_duration - 0.7),
+        message_clip.subclip(0, message_duration).crossfadein(0.7).set_start(translation_duration),
+        *video_snippets,
+    ]).subclip(0, translation_duration+message_duration)
     video_path = os.path.join(directory, f'{text}.mp4')
     full_video.write_videofile(video_path,fps=24,codec='mpeg4')
     language_names = [language_name(language, native=False) for language in languages]
@@ -82,8 +91,7 @@ def spoken_languages():
             unique_languages.append(language_code)
     return unique_languages
 
-size = (720,460)
-def language_video_snippet(en_text, translated_text, language, audio_path, size, fade_en_text=False):
+def language_video_snippet(en_text, translated_text, language, audio_path, start_time):
     language_native = language_name(language, native=True)
     language_english = language_name(language, native=False)
 
@@ -92,44 +100,14 @@ def language_video_snippet(en_text, translated_text, language, audio_path, size,
     animation_duration = 0.7
     wait_duration = 0.5
 
+    exit_start = animation_duration + audio_clip.duration + 2 * wait_duration
+
     translated_text_clip = TextClip(translated_text, color='black', font="ArialUnicode", fontsize=200).set_position(('center', 0.47), relative=True)
-    en_text_clip = TextClip(en_text, color='black', font='ArialUnicode', fontsize=200).set_position(('center', 0.2), relative=True)
     language_text_clip = TextClip(f'{language_native} ({language_english})', color='black', font='ArialUnicode', fontsize=100).set_position(('center', 0.6), relative=True)
 
-    before_audio_video_clip = CompositeVideoClip([
-        en_text_clip.subclip(0, animation_duration+wait_duration),
-        translated_text_clip.subclip(0, animation_duration).crossfadein(animation_duration),
-        translated_text_clip.subclip(0, wait_duration).set_start(animation_duration),
-        language_text_clip.subclip(0, animation_duration).crossfadein(animation_duration),
-        language_text_clip.subclip(0, wait_duration).set_start(animation_duration)
-        ], size=size)
-    audio_video_clip = CompositeVideoClip([
-        en_text_clip.subclip(0, audio_clip.duration),
-        translated_text_clip.subclip(0, audio_clip.duration),
-        language_text_clip.subclip(0, audio_clip.duration)
-        ], size=size).set_audio(audio_clip)
-    after_audio_video_clip = CompositeVideoClip([
-        *([en_text_clip.subclip(0, animation_duration+wait_duration)] if not fade_en_text else [
-            en_text_clip.subclip(0, wait_duration),
-            en_text_clip.subclip(0, animation_duration).crossfadeout(animation_duration).set_start(wait_duration),
-        ]),
-        translated_text_clip.subclip(0, wait_duration),
-        translated_text_clip.subclip(0, animation_duration).crossfadeout(animation_duration).set_start(wait_duration),
-        language_text_clip.subclip(0, wait_duration),
-        language_text_clip.subclip(0, animation_duration).crossfadeout(animation_duration).set_start(wait_duration)
-        ], size=size)
-
-    text_clips = concatenate_videoclips([
-        before_audio_video_clip,
-        audio_video_clip,
-        after_audio_video_clip
-        ])
-    return text_clips
-    
-    
-def closing_message(size):
-    duration = 4
-    message_clip = TextClip("""Leave a comment with words\nyou would like to hear translated!""", color='black', font="ArialUnicode", fontsize=150).set_position(('center', 0.35), relative=True)
-    return CompositeVideoClip([
-        message_clip.subclip(0,duration).crossfadein(0.7)
-    ], size=size)
+    return [
+        translated_text_clip.subclip(0, exit_start).crossfadein(animation_duration).set_start(start_time).set_audio(audio_clip.set_start(start_time+animation_duration+wait_duration)),
+        translated_text_clip.subclip(0, animation_duration).crossfadeout(animation_duration).set_start(start_time + exit_start),
+        language_text_clip.subclip(0, exit_start).crossfadein(animation_duration).set_start(start_time),
+        language_text_clip.subclip(0, animation_duration).crossfadeout(animation_duration).set_start(start_time + exit_start),
+    ], exit_start + animation_duration
