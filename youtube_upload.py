@@ -128,7 +128,7 @@ def resumable_upload(insert_request):
       print(f"Sleeping {sleep_seconds} seconds and then retrying...")
       time.sleep(sleep_seconds)
 
-def upload_to_youtube(filename, title, description, category=27, keywords=[], privacy_status=PrivacyStatus.PRIVATE):
+def upload(filename, title, description, category=27, keywords=[], privacy_status=PrivacyStatus.PRIVATE):
   if not os.path.exists(filename):
     print("Please specify a valid filename")
     return

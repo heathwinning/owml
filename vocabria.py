@@ -10,37 +10,41 @@ import argparse
 
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.abspath("vocabria.json")
 
-def speak_in_many_languages(text, privacy_status=youtube_upload.PrivacyStatus.PUBLIC):
-    background_image_clip = ImageClip("background-image.png")
-    text = text.title()
-    directory = os.path.join('videos', text)
-    if not os.path.exists(directory):
-        os.mkdir(directory)
-    languages = ['en'] + spoken_languages()
-    video_snippets = []
-    current_video_duration = 0
-    for index, language in enumerate(languages):
-        translation, audio_output_path = translate_and_speak(text, language, directory)
-        snippet, snippet_duration = language_video_snippet(text, translation, language, audio_output_path, current_video_duration)
-        video_snippets += snippet
-        current_video_duration += snippet_duration
-    translation_duration = current_video_duration
-    en_text_clip = TextClip(text, color='black', font='ArialUnicode', fontsize=200).set_position(('center', 0.2), relative=True)
+def owml_videos(texts):
+    for text in texts:
+        background_image_clip = ImageClip("background-image.png")
+        text = text.title()
+        directory = os.path.join('videos', text)
+        if not os.path.exists(directory):
+            os.mkdir(directory)
+        languages = ['en'] + spoken_languages()
+        video_snippets = []
+        current_video_duration = 0
+        for index, language in enumerate(languages):
+            translation, audio_output_path = translate_and_speak(text, language, directory)
+            snippet, snippet_duration = language_video_snippet(text, translation, language, audio_output_path, current_video_duration)
+            video_snippets += snippet
+            current_video_duration += snippet_duration
+        translation_duration = current_video_duration
+        en_text_clip = TextClip(text, color='black', font='ArialUnicode', fontsize=200).set_position(('center', 0.2), relative=True)
 
-    message_duration = 4
-    message_clip = TextClip("""Leave a comment with words\nyou would like to hear translated!""", color='black', font="ArialUnicode", fontsize=150).set_position(('center', 0.35), relative=True)
+        message_duration = 4
+        message_clip = TextClip("""Leave a comment with words\nyou would like to hear translated!""", color='black', font="ArialUnicode", fontsize=150).set_position(('center', 0.35), relative=True)
 
-    full_video = CompositeVideoClip([
-        background_image_clip,
-        en_text_clip.subclip(0, translation_duration - 0.7),
-        en_text_clip.subclip(0, 0.7).crossfadeout(0.7).set_start(translation_duration - 0.7),
-        message_clip.subclip(0, message_duration).crossfadein(0.7).set_start(translation_duration),
-        *video_snippets,
-    ]).subclip(0, translation_duration+message_duration)
-    video_path = os.path.join(directory, f'{text}.mp4')
-    full_video.write_videofile(video_path,fps=24,codec='mpeg4')
-    language_names = [language_name(language, native=False) for language in languages]
-    youtube_upload.upload_to_youtube(video_path, f'"{text}" spoken in many languages', f'Hear the word "{text}" spoken in many different languages.\n\n{", ".join(language_names)}', category=27, keywords=['language', 'translation', 'pronunciation', text], privacy_status=privacy_status)
+        full_video = CompositeVideoClip([
+            background_image_clip,
+            en_text_clip.subclip(0, translation_duration - 0.7),
+            en_text_clip.subclip(0, 0.7).crossfadeout(0.7).set_start(translation_duration - 0.7),
+            message_clip.subclip(0, message_duration).crossfadein(0.7).set_start(translation_duration),
+            *video_snippets,
+        ]).subclip(0, translation_duration+message_duration)
+        video_path = os.path.join(directory, f'{text}.mp4')
+        full_video.write_videofile(video_path,fps=24,codec='mpeg4')
+        language_names = [language_name(language, native=False) for language in languages]
+        yield video_path, text, language_names
+
+def upload_to_youtube(video_path, text, language_names, privacy_status):
+    youtube_upload.upload(video_path, f'"{text}" spoken in many languages', f'Hear the word "{text}" spoken in many different languages.\n\n{", ".join(language_names)}', category=27, keywords=['language', 'translation', 'pronunciation', text], privacy_status=privacy_status)
 
 def language_name(language, native=True):
     if native:

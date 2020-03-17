@@ -6,10 +6,16 @@ import argparse
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Make a vocabria video')
-    parser.add_argument('text', type=str, help='some text to translate')
+    parser.add_argument('texts', type=str, nargs='+', help='some text to translate')
     parser.add_argument('--privacy-status', type=PrivacyStatus, default=PrivacyStatus.PUBLIC,
-    choices=list(PrivacyStatus),
-                        help='youtube video privacy setting')
+    choices=list(PrivacyStatus), help='youtube video privacy setting')
+    parser.add_argument('--upload', dest='upload', action='store_true')
+    parser.add_argument('--no-upload', dest='upload', action='store_false')
+    parser.set_defaults(feature=True)
 
     args = parser.parse_args()
-    vocabria.speak_in_many_languages(args.text, args.privacy_status)
+    for video_path, text, language_names in vocabria.owml_video(args.texts):
+        if args.upload:
+            vocabria.upload_to_youtube(video_path, text, language_names, args.privacy_status)
+        else:
+            print(f'Skipping upload of {video_path}')
