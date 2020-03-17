@@ -11,23 +11,23 @@ import argparse
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.abspath("vocabria.json")
 
 def speak_in_many_languages(text, privacy_status=youtube_upload.PrivacyStatus.PUBLIC):
+    background_image_clip = ImageClip("background-image.png")
     text = text.title()
     directory = os.path.join('videos', text)
     if not os.path.exists(directory):
         os.mkdir(directory)
     video_snippets = []
     languages = ['en'] + spoken_languages()
-    languages = languages[:5]
+    languages = languages[:2]
     for index, language in enumerate(languages):
         translation, audio_output_path = translate_and_speak(text, language, directory)
-        video_snippets.append(language_video_snippet(text, translation, language, audio_output_path, index==len(languages)))
-    video_snippets.append(closing_message())
+        video_snippets.append(language_video_snippet(text, translation, language, audio_output_path, background_image_clip.size, index==len(languages)))
+    video_snippets.append(closing_message(background_image_clip.size))
     full_video = concatenate_videoclips(video_snippets)
-    background_image_clip = ImageClip("background-image.png")
     full_video = CompositeVideoClip([
         background_image_clip,
         full_video
-    ]).subclip(0, full_video.duration)
+    ], size=background_image_clip.size).subclip(0, full_video.duration)
     video_path = os.path.join(directory, f'{text}.mp4')
     full_video.write_videofile(video_path,fps=24,codec='mpeg4')
     language_names = [language_name(language, native=False) for language in languages]
@@ -82,8 +82,8 @@ def spoken_languages():
             unique_languages.append(language_code)
     return unique_languages
 
-screensize = (720,460)
-def language_video_snippet(en_text, translated_text, language, audio_path, fade_en_text=False):
+size = (720,460)
+def language_video_snippet(en_text, translated_text, language, audio_path, size, fade_en_text=False):
     language_native = language_name(language, native=True)
     language_english = language_name(language, native=False)
 
@@ -102,12 +102,12 @@ def language_video_snippet(en_text, translated_text, language, audio_path, fade_
         translated_text_clip.subclip(0, wait_duration).set_start(animation_duration),
         language_text_clip.subclip(0, animation_duration).crossfadein(animation_duration),
         language_text_clip.subclip(0, wait_duration).set_start(animation_duration)
-        ])
+        ], size=size)
     audio_video_clip = CompositeVideoClip([
         en_text_clip.subclip(0, audio_clip.duration),
         translated_text_clip.subclip(0, audio_clip.duration),
         language_text_clip.subclip(0, audio_clip.duration)
-        ]).set_audio(audio_clip)
+        ], size=size).set_audio(audio_clip)
     after_audio_video_clip = CompositeVideoClip([
         *([en_text_clip.subclip(0, animation_duration+wait_duration)] if not fade_en_text else [
             en_text_clip.subclip(0, wait_duration),
@@ -117,7 +117,7 @@ def language_video_snippet(en_text, translated_text, language, audio_path, fade_
         translated_text_clip.subclip(0, animation_duration).crossfadeout(animation_duration).set_start(wait_duration),
         language_text_clip.subclip(0, wait_duration),
         language_text_clip.subclip(0, animation_duration).crossfadeout(animation_duration).set_start(wait_duration)
-        ])
+        ], size=size)
 
     text_clips = concatenate_videoclips([
         before_audio_video_clip,
@@ -127,9 +127,9 @@ def language_video_snippet(en_text, translated_text, language, audio_path, fade_
     return text_clips
     
     
-def closing_message():
+def closing_message(size):
     duration = 4
     message_clip = TextClip("""Leave a comment with words\nyou would like to hear translated!""", color='black', font="ArialUnicode", fontsize=150).set_position(('center', 0.35), relative=True)
     return CompositeVideoClip([
         message_clip.subclip(0,duration).crossfadein(0.7)
-    ])
+    ], size=size)
