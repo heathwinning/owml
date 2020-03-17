@@ -11,10 +11,10 @@ if __name__ == '__main__':
     choices=list(PrivacyStatus), help='youtube video privacy setting')
     parser.add_argument('--upload', dest='upload', action='store_true')
     parser.add_argument('--no-upload', dest='upload', action='store_false')
-    parser.set_defaults(feature=True)
+    parser.set_defaults(upload=True)
 
     args = parser.parse_args()
-    for video_path, text, language_names in vocabria.owml_video(args.texts):
+    for video_path, text, language_names in vocabria.owml_videos(args.texts):
         if args.upload:
             vocabria.upload_to_youtube(video_path, text, language_names, args.privacy_status)
         else:
