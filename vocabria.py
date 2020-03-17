@@ -17,7 +17,7 @@ def speak_in_many_languages(text, privacy_status=youtube_upload.PrivacyStatus.PU
         os.mkdir(directory)
     video_snippets = []
     languages = ['en'] + spoken_languages()
-    #languages = languages[:1]
+    languages = languages[:5]
     for index, language in enumerate(languages):
         translation, audio_output_path = translate_and_speak(text, language, directory)
         video_snippets.append(language_video_snippet(text, translation, language, audio_output_path, index==len(languages)))
@@ -123,6 +123,16 @@ def language_video_snippet(en_text, translated_text, language, audio_path, fade_
         audio_video_clip,
         after_audio_video_clip
         ])
+    #text_clips = concatenate_videoclips([
+    #    before_audio_video_clip,
+    #    audio_video_clip,
+    #    after_audio_video_clip
+    #    ])
+    #return CompositeVideoClip([
+    #    background_image_clip,
+    #    text_clips
+    #])
+    
     
 def closing_message():
     duration = 4
