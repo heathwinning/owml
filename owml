@@ -1,21 +1,100 @@
 #!/usr/bin/env python
 
-import vocabria
 from youtube_upload import PrivacyStatus
 import argparse
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='Make a vocabria video')
-    parser.add_argument('texts', type=str, nargs='+', help='some text to translate')
-    parser.add_argument('--privacy-status', type=PrivacyStatus, default=PrivacyStatus.PUBLIC,
+    subparsers = parser.add_subparsers()
+
+    video_parser = subparsers.add_parser('video', help='render and upload')
+    video_parser.add_argument('words', type=str, nargs='*', help='list of words to translate, leave blank to continue schedule')
+    video_parser.add_argument('--privacy-status', type=PrivacyStatus, default=PrivacyStatus.PUBLIC,
     choices=list(PrivacyStatus), help='youtube video privacy setting')
-    parser.add_argument('--upload', dest='upload', action='store_true')
-    parser.add_argument('--no-upload', dest='upload', action='store_false')
-    parser.set_defaults(upload=True)
+    video_parser.add_argument('--upload', dest='upload', action='store_true')
+    video_parser.add_argument('--no-upload', dest='upload', action='store_false')
+    video_parser.add_argument('--upload-only', dest='render', action='store_false')
+    video_parser.add_argument('--max-words', type=int, dest='max_words', default=-1)
+    video_parser.set_defaults(upload=True)
+    video_parser.set_defaults(render=True)
+    video_parser.set_defaults(command=video)
+
+    word_parser = subparsers.add_parser('word', help='schedule words')
+    word_subparsers = word_parser.add_subparsers()
+
+    word_list_parser = word_subparsers.add_parser('list', help='list scheduled words')
+    word_list_parser.add_argument('--uploaded', dest='uploaded', action='store_true')
+    word_list_parser.add_argument('--not-uploaded', dest='uploaded', action='store_false')
+    word_list_parser.add_argument('--rendered', dest='rendered', action='store_true')
+    word_list_parser.add_argument('--not-rendered', dest='rendered', action='store_false')
+    word_list_parser.set_defaults(uploaded=False)
+    word_list_parser.set_defaults(rendered=False)
+    word_list_parser.set_defaults(command=word_list)
+
+    word_add_parser = word_subparsers.add_parser('add', help='add words to the schedule')
+    word_add_parser.add_argument('words', type=str, nargs='+', help='list of words to schedule')
+    word_add_parser.add_argument('--uploaded', dest='uploaded', action='store_true')
+    word_add_parser.add_argument('--not-uploaded', dest='uploaded', action='store_false')
+    word_add_parser.add_argument('--rendered', dest='rendered', action='store_true')
+    word_add_parser.add_argument('--not-rendered', dest='rendered', action='store_false')
+    word_add_parser.set_defaults(uploaded=False)
+    word_add_parser.set_defaults(rendered=False)
+    word_add_parser.set_defaults(command=word_add)
+
+    word_set_parser = word_subparsers.add_parser('set', help='manually set status of words in the schedule')
+    word_set_parser.add_argument('words', type=str, nargs='+', help='list of words to schedule')
+    word_set_parser.add_argument('--uploaded', dest='uploaded', action='store_true')
+    word_set_parser.add_argument('--not-uploaded', dest='uploaded', action='store_false')
+    word_set_parser.add_argument('--rendered', dest='rendered', action='store_true')
+    word_set_parser.add_argument('--not-rendered', dest='rendered', action='store_false')
+    word_set_parser.set_defaults(uploaded=True)
+    word_set_parser.set_defaults(rendered=True)
+    word_set_parser.set_defaults(command=word_set)
 
     args = parser.parse_args()
-    for video_path, text, language_names in vocabria.owml_videos(args.texts):
+    args.command(args)
+
+def video(args):
+    import vocabria
+    import word_schedule
+    if args.words:
+        words = args.words
+    else:
+        words = word_schedule.query_words(not args.render, False)
+        max_words = args.max_words if args.max_words > 0 else len(words)
+        words = words[:max_words]
+
+    if len(words) == 0:
+        print('There are no words scheduled!')
+        return
+
+    videos = None
+    if args.render:
+        videos = vocabria.owml_videos(words)
+    else:
+        videos = vocabria.rendered_videos(words)
+    for video_path, word, language_names in videos:
         if args.upload:
-            vocabria.upload_to_youtube(video_path, text, language_names, args.privacy_status)
+            vocabria.upload_to_youtube(video_path, word, language_names, args.privacy_status)
         else:
             print(f'Skipping upload of {video_path}')
+
+def word_list(args):
+    import word_schedule
+    rendered_str = 'have' if args.rendered else 'have not'
+    uploaded_str = 'have' if args.uploaded else 'have not'
+    print(f'Words that {rendered_str} been rendered, and {uploaded_str} been uploaded:')
+    for word in word_schedule.query_words(args.rendered, args.uploaded):
+        print(f'\t{word}')
+
+def word_add(args):
+    import word_schedule
+    word_schedule.add_words(args.words, rendered=args.rendered, uploaded=args.uploaded)
+
+def word_set(args):
+    import word_schedule
+    word_schedule.set_uploaded(args.words, args.uploaded)
+    word_schedule.set_rendered(args.words, args.rendered)
+
+if __name__ == '__main__':
+    main()

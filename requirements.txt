@@ -1,3 +1,4 @@
+pandas==1.0.3
 Babel==2.8.0
 google-api-python-client==1.8.0
 google-auth==1.11.3
@@ -5,3 +6,5 @@ google-auth-oauthlib==0.4.1
 google-cloud-translate==2.0.1
 google-cloud-texttospeech==1.0.1
 moviepy==1.0.1
+grpcio==1.27.2
+scipy==1.4.1

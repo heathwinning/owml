@@ -75,7 +75,7 @@ def get_authenticated_service():
   return build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, credentials=credentials)
 
 def initialize_upload(youtube, filename, title, description, category, keywords, privacy_status):
-
+  print(f'Beginning upload of {filename} with title {title}...')
   body=dict(
     snippet=dict(
       title=title,
@@ -94,7 +94,7 @@ def initialize_upload(youtube, filename, title, description, category, keywords,
     media_body=MediaFileUpload(filename, chunksize=-1, resumable=True)
   )
 
-  resumable_upload(insert_request)
+  return resumable_upload(insert_request)
 
 def resumable_upload(insert_request):
   response = None
@@ -107,8 +107,10 @@ def resumable_upload(insert_request):
       if response is not None:
         if 'id' in response:
           print(f"Video id {response['id']} was successfully uploaded.")
+          return True
         else:
-          exit(f"The upload failed with an unexpected response: {response}")
+          print(f"The upload failed with an unexpected response: {response}")
+          return False
     except HttpError as e:
       if e.resp.status in RETRIABLE_STATUS_CODES:
         error = f"A retriable HTTP error {e.resp.status} occurred:\n{e.content}" 
@@ -121,7 +123,8 @@ def resumable_upload(insert_request):
       print(error)
       retry += 1
       if retry > MAX_RETRIES:
-        exit("No longer attempting to retry.")
+        print("No longer attempting to retry.")
+        return False
 
       max_sleep = 2 ** retry
       sleep_seconds = random.random() * max_sleep
@@ -134,6 +137,7 @@ def upload(filename, title, description, category=27, keywords=[], privacy_statu
     return
   youtube = get_authenticated_service()
   try:
-    initialize_upload(youtube, filename, title, description, category, keywords, privacy_status)
+    return initialize_upload(youtube, filename, title, description, category, keywords, privacy_status)
   except HttpError as e:
     print(f"An HTTP error {e.resp.status} occurred:\n{e.content}")
+    return False
