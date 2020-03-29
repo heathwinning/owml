@@ -19,8 +19,8 @@ def set_uploaded(uploaded_words, status):
 
 def add_words(new_words, rendered=False, uploaded=False):
     words = get_words()
-    new_words = pd.DataFrame(data={'word': new_words, 'rendered': [rendered] * len(new_words), 'uploaded': [uploaded] * len(new_words)})
-    combined_words = pd.concat([words,new_words]).drop_duplicates('word')
+    new_words_df = pd.DataFrame(data={'word': new_words, 'rendered': [rendered] * len(new_words), 'uploaded': [uploaded] * len(new_words)})
+    combined_words = pd.concat([words,new_words_df]).drop_duplicates('word')
     save_words(combined_words)
     print(f'Successfully added to schedule:', ', '.join(new_words))
 

@@ -14,7 +14,7 @@ def main():
     video_parser.add_argument('--upload', dest='upload', action='store_true')
     video_parser.add_argument('--no-upload', dest='upload', action='store_false')
     video_parser.add_argument('--upload-only', dest='render', action='store_false')
-    video_parser.add_argument('--max-words', type=int, dest='max_words', default=-1)
+    video_parser.add_argument('--max-words', type=int, dest='max_words', default=1, help='maximum number of videos to do, use -1 for unlimited')
     video_parser.set_defaults(upload=True)
     video_parser.set_defaults(render=True)
     video_parser.set_defaults(command=video)

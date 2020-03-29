@@ -44,14 +44,14 @@ def owml_videos(texts):
         ]).subclip(0, translation_duration+message_duration)
         video_path = os.path.join(directory, f'{text}.mp4')
         full_video.write_videofile(video_path,fps=24,codec='mpeg4')
-        word_schedule.set_rendered([text], True)
+        word_schedule.set_rendered([text.lower()], True)
         language_names = [language_name(language, native=False) for language in languages]
         yield video_path, text, language_names
 
 def upload_to_youtube(video_path, text, language_names, privacy_status):
     success = youtube_upload.upload(video_path, f'"{text}" spoken in many languages', f'Hear the word "{text}" spoken in many different languages.\n\n{", ".join(language_names)}', category=27, keywords=['language', 'translation', 'pronunciation', text], privacy_status=privacy_status)
     if success:
-        word_schedule.set_uploaded([text], True)
+        word_schedule.set_uploaded([text.lower()], True)
 
 def rendered_videos(texts):
     for text in texts:
