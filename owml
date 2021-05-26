@@ -59,20 +59,20 @@ def video(args):
     import word_schedule
     if args.words:
         words = args.words
-    else:
-        words = word_schedule.query_words(not args.render, False)
-        max_words = args.max_words if args.max_words > 0 else len(words)
-        words = words[:max_words]
+        word_schedule.add_words(words)
+    words_to_be_rendered = word_schedule.query_words(not args.render, False)
+    max_words = args.max_words if args.max_words > 0 else len(words_to_be_rendered)
+    words_to_be_rendered = words_to_be_rendered[:max_words]
 
-    if len(words) == 0:
-        print('There are no words scheduled!')
+    if len(words_to_be_rendered) == 0:
+        print('There are no words scheduled for rendering!')
         return
 
     videos = None
     if args.render:
-        videos = vocabria.owml_videos(words)
+        videos = vocabria.owml_videos(words_to_be_rendered)
     else:
-        videos = vocabria.rendered_videos(words)
+        videos = vocabria.rendered_videos(words_to_be_rendered)
     for video_path, word, language_names in videos:
         if args.upload:
             vocabria.upload_to_youtube(video_path, word, language_names, args.privacy_status)

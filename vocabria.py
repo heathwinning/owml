@@ -73,7 +73,7 @@ def language_name(language, native=True):
 
 project_id = 'vocabria'
 translate_client = translate.TranslationServiceClient()
-client_parent = translate_client.location_path(project_id, 'global')
+client_parent = f"projects/{project_id}/locations/global"
 def translate(text, language_code):
     if language_code == 'en':
         return text
@@ -87,13 +87,13 @@ def translate(text, language_code):
 
 texttospeech_client = texttospeech.TextToSpeechClient()
 def speak(text, language, filename):
-    synthesis_input = texttospeech.types.SynthesisInput(text=text)
-    voice_selection = texttospeech.types.VoiceSelectionParams(
+    synthesis_input = texttospeech.SynthesisInput(text=text)
+    voice_selection = texttospeech.VoiceSelectionParams(
         language_code=language
     )
-    audio_config = texttospeech.types.AudioConfig(
-        audio_encoding=texttospeech.enums.AudioEncoding.MP3)
-    response = texttospeech_client.synthesize_speech(synthesis_input, voice_selection, audio_config)
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.MP3)
+    response = texttospeech_client.synthesize_speech(input=synthesis_input, voice=voice_selection, audio_config=audio_config)
     with open(filename, 'wb') as out:
         out.write(response.audio_content)
         print(f'Audio content written to file "{filename}"')
